@@ -88,7 +88,62 @@ fn part1(input: [][]const u8) void {
     dprint("sum: {d}\n", .{sum});
 }
 
+fn part2(input: [][]const u8) void {
+    var sum: u64 = 0;
+    var cline: u32 = 0;
+    for (input) |line| {
+        var iter = mem.tokenize(u8, line, " ");
+        var cnum: u8 = 0;
+        var cgame: u32 = 0;
+        var tcount: u8 = 0;
+        var rcount: u32 = 0;
+        var bcount: u32 = 0;
+        var gcount: u32 = 0;
+        while (iter.next()) |word| {
+            tcount += 1;
+            if (tcount <= 2) {
+                if (tcount == 2) {
+                    const nword = std.fmt.parseUnsigned(u32, word[0 .. word.len - 1], 10);
+                    if (nword) |nw| {
+                        cgame = nw;
+                    } else |_| {
+                        unreachable;
+                    }
+                    // dprint("cline: {d}, tcount: {d}, cgame: {d}\n", .{ cline, tcount, cgame });
+                }
+                continue;
+            }
+            const num = std.fmt.parseUnsigned(u8, word, 10);
+            if (num) |n| {
+                cnum = n;
+                // dprint("cline: {d}, cnum: {d}\n", .{ cline, cnum });
+            } else |_| {
+                var new_word: []const u8 = word;
+                if (word[word.len - 1] == ',' or word[word.len - 1] == ';') {
+                    new_word = word[0 .. word.len - 1];
+                }
+                if (mem.eql(u8, new_word, "red")) {
+                    rcount = @max(rcount, cnum);
+                } else if (mem.eql(u8, new_word, "green")) {
+                    gcount = @max(gcount, cnum);
+                } else if (mem.eql(u8, new_word, "blue")) {
+                    bcount = @max(bcount, cnum);
+                }
+                // dprint("cline: {d}, new_word: {s}\n", .{ cline, new_word });
+            }
+        }
+        dprint("r: {d}, g: {d}, b: {d}\n", .{ rcount, gcount, bcount });
+        sum += (rcount * gcount * bcount);
+        // dprint("sum: {d}", .{sum});
+        // dprint("\n-------\n", .{});
+
+        cline += 1;
+    }
+
+    dprint("sum: {d}\n", .{sum});
+}
+
 pub fn main() !void {
     const input = try split_lines("./input.txt");
-    part1(input);
+    part2(input);
 }
