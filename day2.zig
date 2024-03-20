@@ -28,19 +28,22 @@ const maxg = 13;
 const maxb = 14;
 
 const CubeSet = struct {
-    red: u8,
-    green: u8,
-    blue: u8,
+    red: u32,
+    green: u32,
+    blue: u32,
 };
 
 fn solve(input: [][]const u8) !void {
-    const limitCube = CubeSet{ .red = 12, .green = 13, .blue = 14 };
-    var part1_ans: u32 = 0;
-    GameLoop: for (input) |line| {
+    // const limitCube = CubeSet{ .red = 12, .green = 13, .blue = 14 };
+    // var part1_ans: u32 = 0;
+    var part2_ans: u32 = 0;
+    for (input) |line| {
+        var BaseCube = CubeSet{ .red = 0, .green = 0, .blue = 0 };
         var split_iter = mem.splitSequence(u8, line, ": ");
         var game = split_iter.next().?;
         var game_input = split_iter.next().?;
         var game_idx = try fmt.parseInt(u8, game[5..], 10);
+        _ = game_idx;
 
         var game_steps = mem.splitSequence(u8, game_input, "; ");
 
@@ -58,16 +61,22 @@ fn solve(input: [][]const u8) !void {
                     singleCube.blue = freq;
                 }
             }
+            BaseCube.red = @max(BaseCube.red, singleCube.red);
+            BaseCube.green = @max(BaseCube.green, singleCube.green);
+            BaseCube.blue = @max(BaseCube.blue, singleCube.blue);
 
-            if (singleCube.red > limitCube.red or singleCube.green > limitCube.green or singleCube.blue > limitCube.blue) {
-                continue :GameLoop;
-            }
+            // this is for part1
+            // if (singleCube.red > limitCube.red or singleCube.green > limitCube.green or singleCube.blue > limitCube.blue) {
+            //     continue :GameLoop;
+            // }
         }
+        const CubeMul = BaseCube.red * BaseCube.green * BaseCube.blue;
+        part2_ans += CubeMul;
 
-        part1_ans += game_idx;
+        // this is for part1
+        // part1_ans += game_idx;
     }
-
-    dprint("{}\n", .{part1_ans});
+    dprint("{}\n", .{part2_ans});
 }
 
 fn part1(input: [][]const u8) void {
