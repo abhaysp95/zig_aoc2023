@@ -27,6 +27,49 @@ const maxr = 12;
 const maxg = 13;
 const maxb = 14;
 
+const CubeSet = struct {
+    red: u8,
+    green: u8,
+    blue: u8,
+};
+
+fn solve(input: [][]const u8) !void {
+    const limitCube = CubeSet{ .red = 12, .green = 13, .blue = 14 };
+    var part1_ans: u32 = 0;
+    GameLoop: for (input) |line| {
+        var split_iter = mem.splitSequence(u8, line, ": ");
+        var game = split_iter.next().?;
+        var game_input = split_iter.next().?;
+        var game_idx = try fmt.parseInt(u8, game[5..], 10);
+
+        var game_steps = mem.splitSequence(u8, game_input, "; ");
+
+        while (game_steps.next()) |step| {
+            var cube = mem.tokenizeAny(u8, step, ", ");
+            var singleCube = CubeSet{ .red = 0, .green = 0, .blue = 0 };
+            while (cube.next()) |c| {
+                const freq = try fmt.parseInt(u8, c, 10);
+                const color = cube.next().?;
+                if (mem.eql(u8, color, "red")) {
+                    singleCube.red = freq;
+                } else if (mem.eql(u8, color, "green")) {
+                    singleCube.green = freq;
+                } else if (mem.eql(u8, color, "blue")) {
+                    singleCube.blue = freq;
+                }
+            }
+
+            if (singleCube.red > limitCube.red or singleCube.green > limitCube.green or singleCube.blue > limitCube.blue) {
+                continue :GameLoop;
+            }
+        }
+
+        part1_ans += game_idx;
+    }
+
+    dprint("{}\n", .{part1_ans});
+}
+
 fn part1(input: [][]const u8) void {
     var sum: u32 = 0;
     var cline: u32 = 0;
@@ -145,5 +188,6 @@ fn part2(input: [][]const u8) void {
 
 pub fn main() !void {
     const input = try split_lines("./input.txt");
-    part2(input);
+    // part2(input);
+    try solve(input);
 }
