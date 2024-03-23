@@ -53,15 +53,24 @@ fn part2(input: [][]const u8, visited: ArrayList([]u8), nr: u16, nc: u16) !void 
                     var nx = @as(isize, i) + drow[c];
                     var ny = @as(isize, j) + dcol[c];
                     if (nx >= 0 and ny >= 0 and nx < nr and ny < nc) {
+                        // var counter: u32 = @intCast(ny + 1);
+                        var counter: u32 = @intCast(ny -% 1);
                         var unx: usize = @intCast(nx);
-                        var counter: u32 = @intCast(ny + 1);
                         var buf_start: u32 = 0;
                         var buf_len: u32 = 0;
                         dprint("i: {}, j: {}, nx: {}, ny: {}\n", .{ i, j, nx, ny });
-                        while (counter >= 1 and visited.items[unx][counter - 1] == 'f') : (counter -= 1) {
-                            buf_start = counter - 1;
-                            buf_len += 1;
+                        if (visited.items[unx][@intCast(ny)] == 'f') {
+                            buf_start = counter + 1;
+                            buf_len = 1;
+                            while (counter < ny and visited.items[unx][counter] == 'f') : (counter -%= 1) {
+                                buf_start = counter;
+                                buf_len += 1;
+                            }
                         }
+                        // while (counter >= 1 and visited.items[unx][counter - 1] == 'f') : (counter -= 1) {
+                        //     buf_start = counter - 1;
+                        //     buf_len += 1;
+                        // }
                         counter = @intCast(ny);
                         if (visited.items[unx][counter] == 'f') {
                             counter = @intCast(ny + 1);
@@ -179,4 +188,13 @@ pub fn main() !void {
 
     // try part1(input, visited, nr, nc);
     try part2(input, visited, nr, nc);
+
+    // -- prevent integer overflow during loops --
+    var some_length: u16 = 10;
+    var counter: u16 = some_length -% 1;
+    dprint("{}\n", .{counter});
+    while (counter < some_length) : (counter -%= 1) {
+        dprint("counter: {}\n", .{counter});
+    }
+    dprint("{}\n", .{counter});
 }
