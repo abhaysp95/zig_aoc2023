@@ -54,17 +54,18 @@ fn part2(input: [][]const u8, visited: ArrayList([]u8), nr: u16, nc: u16) !void 
                     var ny = @as(isize, j) + dcol[c];
                     if (nx >= 0 and ny >= 0 and nx < nr and ny < nc) {
                         var unx: usize = @intCast(nx);
-                        var counter: isize = ny;
+                        var counter: u32 = @intCast(ny + 1);
                         var buf_start: u32 = 0;
                         var buf_len: u32 = 0;
                         dprint("i: {}, j: {}, nx: {}, ny: {}\n", .{ i, j, nx, ny });
-                        while (counter >= 0 and visited.items[unx][@intCast(counter)] == 'f') : (counter -= 1) {
-                            buf_start = @intCast(counter);
+                        while (counter >= 1 and visited.items[unx][counter - 1] == 'f') : (counter -= 1) {
+                            buf_start = counter - 1;
                             buf_len += 1;
                         }
-                        counter = ny + 1;
-                        if (visited.items[unx][@intCast(counter - 1)] == 'f') {
-                            while (counter < nc and visited.items[unx][@intCast(counter)] == 'f') : (counter += 1) {
+                        counter = @intCast(ny);
+                        if (visited.items[unx][counter] == 'f') {
+                            counter = @intCast(ny + 1);
+                            while (counter < nc and visited.items[unx][counter] == 'f') : (counter += 1) {
                                 buf_len += 1;
                             }
                         }
@@ -111,25 +112,24 @@ fn part1(input: [][]const u8, visited: ArrayList([]u8), nr: u16, nc: u16) !void 
                         // move to prev column now
                         var buf_start: u32 = 0;
                         var buf_len: u32 = 0;
-                        var counter: isize = ny;
-                        var unx: usize = @intCast(nx);
+                        var counter: u32 = @intCast(ny + 1); // first, will move backwards, and usize can't handle -1
+                        var unx: u32 = @intCast(nx);
                         // move backward
-                        dprint("i: {}, j: {}, nx: {}, ny: {}\n", .{ i, j, nx, ny });
-                        dprint("counter: {}, visited.items[unx][@intCast(counter)]: {c}\n", .{ counter, visited.items[unx][@intCast(counter)] });
-                        while (counter >= 0 and visited.items[unx][@intCast(counter)] == 'f') : (counter -= 1) {
-                            buf_start = @intCast(counter);
+                        while (counter >= 1 and visited.items[unx][counter - 1] == 'f') : (counter -= 1) {
+                            buf_start = counter - 1;
                             buf_len += 1;
                         }
                         // move forward
-                        counter = ny + 1;
+                        counter = @intCast(ny);
                         if (visited.items[unx][(@intCast(ny))] == 'f') {
-                            while (counter < nc and visited.items[unx][@intCast(counter)] == 'f') : (counter += 1) {
+                            counter = @intCast(ny + 1);
+                            while (counter < nc and visited.items[unx][counter] == 'f') : (counter += 1) {
                                 buf_len += 1;
                             }
                         }
                         counter = 0;
                         while (counter < buf_len) : (counter += 1) {
-                            visited.items[unx][@intCast(buf_start + counter)] = 't';
+                            visited.items[unx][buf_start + counter] = 't';
                         }
                         if (buf_len != 0) {
                             dprint("got num: {s}\n", .{input[unx][buf_start .. buf_start + buf_len]});
