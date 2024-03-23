@@ -34,6 +34,68 @@ fn is_num(c: u8) bool {
 const drow = [_]i8{ -1, -1, -1, 0, 0, 0, 1, 1, 1 };
 const dcol = [_]i8{ -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 
+fn part2(input: [][]const u8, visited: ArrayList([]u8), nr: u16, nc: u16) !void {
+    const Ratio = struct {
+        n: u32,
+        d: u32,
+    };
+    var sum: usize = 0;
+    var i: u32 = 0;
+    while (i < nr) : (i += 1) {
+        var j: u32 = 0;
+        while (j < nc) : (j += 1) {
+            if (input[i][j] == '*') {
+                // check for the gear with two adjacent number
+                var ratio = Ratio{ .n = 0, .d = 0 };
+                var c: u8 = 0;
+                var num_count: u8 = 0;
+                while (c < 9) : (c += 1) {
+                    var nx = @as(isize, i) + drow[c];
+                    var ny = @as(isize, j) + dcol[c];
+                    if (nx >= 0 and ny >= 0 and nx < nr and ny < nc) {
+                        var unx: usize = @intCast(nx);
+                        var counter: isize = ny;
+                        var buf_start: u32 = 0;
+                        var buf_len: u32 = 0;
+                        dprint("i: {}, j: {}, nx: {}, ny: {}\n", .{ i, j, nx, ny });
+                        while (counter >= 0 and visited.items[unx][@intCast(counter)] == 'f') : (counter -= 1) {
+                            buf_start = @intCast(counter);
+                            buf_len += 1;
+                        }
+                        counter = ny + 1;
+                        if (visited.items[unx][@intCast(counter - 1)] == 'f') {
+                            while (counter < nc and visited.items[unx][@intCast(counter)] == 'f') : (counter += 1) {
+                                buf_len += 1;
+                            }
+                        }
+                        counter = 0;
+                        while (counter < buf_len) : (counter += 1) {
+                            visited.items[unx][@intCast(buf_start + counter)] = 't';
+                        }
+                        if (buf_len != 0) {
+                            dprint("got num: {s}\n", .{input[unx][buf_start .. buf_start + buf_len]});
+                            if (num_count == 0) {
+                                ratio.n = try fmt.parseInt(u32, input[unx][buf_start .. buf_start + buf_len], 10);
+                            } else if (num_count == 1) {
+                                ratio.d = try fmt.parseInt(u32, input[unx][buf_start .. buf_start + buf_len], 10);
+                            } else {
+                                ratio.n = 0;
+                                ratio.d = 0;
+                                break;
+                            }
+                            num_count += 1;
+                        }
+                    }
+                }
+                sum += (ratio.n * ratio.d);
+                dprint("multiplied = n: {}, d: {}, sum: {}\n", .{ ratio.n, ratio.d, sum });
+            }
+        }
+    }
+
+    dprint("sum: {}\n", .{sum});
+}
+
 fn part1(input: [][]const u8, visited: ArrayList([]u8), nr: u16, nc: u16) !void {
     var i: u32 = 0;
     var sum: usize = 0;
@@ -115,5 +177,6 @@ pub fn main() !void {
         nr += 1;
     }
 
-    try part1(input, visited, nr, nc);
+    // try part1(input, visited, nr, nc);
+    try part2(input, visited, nr, nc);
 }
