@@ -3,16 +3,16 @@ const ArrayList = std.ArrayList;
 const mem = std.mem;
 const fmt = std.fmt;
 const dprint = std.debug.print;
-const allocator = std.heap.page_allocator;
+const child_allocator = std.heap.page_allocator;
 
 const ALLOC_SIZE = 1e5;
 const FILENAME = "./input.txt";
 
 fn split_lines(filename: []const u8) ![][]const u8 {
     const file = try std.fs.cwd().openFile(filename, .{});
-    const content = try file.reader().readAllAlloc(allocator, ALLOC_SIZE);
+    const content = try file.reader().readAllAlloc(child_allocator, ALLOC_SIZE);
 
-    var lines = ArrayList([]const u8).init(allocator);
+    var lines = ArrayList([]const u8).init(child_allocator);
     defer lines.deinit();
 
     var iterator = mem.tokenize(u8, content, "\n");
@@ -34,24 +34,26 @@ fn is_num(c: u8) bool {
 const drow = [_]i8{ -1, -1, -1, 0, 0, 0, 1, 1, 1 };
 const dcol = [_]i8{ -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 
-fn part2(input: [][]const u8, visited: ArrayList([]u8), nr: u16, nc: u16) !void {
+fn part2(input: [][]const u8, visited: [][]u8) !void {
     const Ratio = struct {
         n: u32,
         d: u32,
     };
+    const nr = input.len;
+    const nc = input[0].len;
     var sum: usize = 0;
-    var i: u32 = 0;
-    while (i < nr) : (i += 1) {
-        var j: u32 = 0;
-        while (j < nc) : (j += 1) {
+    for (input, 0..) |line, i| {
+        for (line, 0..) |_, j| {
             if (input[i][j] == '*') {
                 // check for the gear with two adjacent number
                 var ratio = Ratio{ .n = 0, .d = 0 };
                 var c: u8 = 0;
                 var num_count: u8 = 0;
                 while (c < 9) : (c += 1) {
-                    var nx = @as(isize, i) + drow[c];
-                    var ny = @as(isize, j) + dcol[c];
+                    var nx: i32 = @intCast(i);
+                    nx += drow[c];
+                    var ny: i32 = @intCast(j);
+                    ny += dcol[c];
                     if (nx >= 0 and ny >= 0 and nx < nr and ny < nc) {
                         // var counter: u32 = @intCast(ny + 1);
                         var counter: u32 = @intCast(ny -% 1);
@@ -59,10 +61,10 @@ fn part2(input: [][]const u8, visited: ArrayList([]u8), nr: u16, nc: u16) !void 
                         var buf_start: u32 = 0;
                         var buf_len: u32 = 0;
                         dprint("i: {}, j: {}, nx: {}, ny: {}\n", .{ i, j, nx, ny });
-                        if (visited.items[unx][@intCast(ny)] == 'f') {
+                        if (visited[unx][@intCast(ny)] == 'f') {
                             buf_start = counter + 1;
                             buf_len = 1;
-                            while (counter < ny and visited.items[unx][counter] == 'f') : (counter -%= 1) {
+                            while (counter < ny and visited[unx][counter] == 'f') : (counter -%= 1) {
                                 buf_start = counter;
                                 buf_len += 1;
                             }
@@ -72,15 +74,15 @@ fn part2(input: [][]const u8, visited: ArrayList([]u8), nr: u16, nc: u16) !void 
                         //     buf_len += 1;
                         // }
                         counter = @intCast(ny);
-                        if (visited.items[unx][counter] == 'f') {
+                        if (visited[unx][counter] == 'f') {
                             counter = @intCast(ny + 1);
-                            while (counter < nc and visited.items[unx][counter] == 'f') : (counter += 1) {
+                            while (counter < nc and visited[unx][counter] == 'f') : (counter += 1) {
                                 buf_len += 1;
                             }
                         }
                         counter = 0;
                         while (counter < buf_len) : (counter += 1) {
-                            visited.items[unx][@intCast(buf_start + counter)] = 't';
+                            visited[unx][@intCast(buf_start + counter)] = 't';
                         }
                         if (buf_len != 0) {
                             dprint("got num: {s}\n", .{input[unx][buf_start .. buf_start + buf_len]});
@@ -165,29 +167,49 @@ fn part1(input: [][]const u8, visited: ArrayList([]u8), nr: u16, nc: u16) !void 
 pub fn main() !void {
     const input = try split_lines(FILENAME);
 
-    var visited = ArrayList([]u8).init(allocator);
-    defer visited.deinit();
+    var arena = std.heap.ArenaAllocator.init(child_allocator);
+    var allocator = arena.allocator();
+    defer arena.deinit();
 
-    var nr: u16 = 0;
-    var nc: u16 = 0;
-    for (input) |line| {
-        var nline = ArrayList(u8).init(allocator);
-        var count: u16 = 0;
-        for (line) |c| {
+    var visited = try allocator.alloc([]u8, input.len);
+    for (0..visited.len) |idx| {
+        visited[idx] = try allocator.alloc(u8, input[0].len);
+        for (input[idx], 0..) |c, i| {
             if (is_num(c)) {
-                try nline.append('f');
-            } else try nline.append(c);
-            count += 1;
+                visited[idx][i] = 'f';
+            } else visited[idx][i] = c;
         }
-        nc = count; // column width is same for each row
-        var bline: []u8 = try nline.toOwnedSlice();
-        try visited.append(bline);
-
-        nr += 1;
     }
 
+    for (input) |line| {
+        dprint("{s}\n", .{line});
+    }
+
+    try part2(input, visited);
+
+    // var visited = ArrayList([]u8).init(allocator);
+    // defer visited.deinit();
+    //
+    // var nr: u16 = 0;
+    // var nc: u16 = 0;
+    // for (input) |line| {
+    //     var nline = ArrayList(u8).init(allocator);
+    //     var count: u16 = 0;
+    //     for (line) |c| {
+    //         if (is_num(c)) {
+    //             try nline.append('f');
+    //         } else try nline.append(c);
+    //         count += 1;
+    //     }
+    //     nc = count; // column width is same for each row
+    //     var bline: []u8 = try nline.toOwnedSlice();
+    //     try visited.append(bline);
+    //
+    //     nr += 1;
+    // }
+
     // try part1(input, visited, nr, nc);
-    try part2(input, visited, nr, nc);
+    // try part2(input, visited, nr, nc);
 
     // -- prevent integer overflow during loops --
     var some_length: u16 = 10;
