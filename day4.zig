@@ -47,7 +47,10 @@ fn split_lines(allocator: mem.Allocator, filename: []const u8) ![][]u8 {
 fn part2(allocator: mem.Allocator, input: [][]const u8) !void {
     const sz = input.len;
 
-    var wc_input = try allocator.alloc(u32, sz);
+    // create an array on stack with default value of 1 for size 10
+    // var wc_input: [10]u32 = .{1} * 10;
+
+    var wc_input = try allocator.alloc(u32, sz); // because sz is not known at compile time
     @memset(wc_input, 1);
     for (input, 0..) |line, idx| {
         var card_iter = mem.splitSequence(u8, line, ": ");
