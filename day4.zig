@@ -44,6 +44,59 @@ fn split_lines(allocator: mem.Allocator, filename: []const u8) ![][]u8 {
     return input;
 }
 
+fn part2(allocator: mem.Allocator, input: [][]const u8) !void {
+    const sz = input.len;
+
+    var wc_input = try allocator.alloc(u32, sz);
+    @memset(wc_input, 1);
+    for (input, 0..) |line, idx| {
+        var card_iter = mem.splitSequence(u8, line, ": ");
+        _ = card_iter.next().?;
+        var card_nums = card_iter.next().?;
+        var split_iter = mem.splitSequence(u8, card_nums, " | ");
+
+        // use tokenize because there can be multiple spaces between number (because of padding)
+        var set1 = mem.tokenizeAny(u8, split_iter.next().?, " ");
+        var set2 = mem.tokenizeAny(u8, split_iter.next().?, " ");
+        var arr1 = ArrayList(u32).init(allocator);
+        defer arr1.deinit();
+        while (set1.next()) |str| {
+            const num = try std.fmt.parseInt(u32, str, 10);
+            try arr1.append(num);
+        }
+        var arr2 = ArrayList(u32).init(allocator);
+        defer arr2.deinit();
+        while (set2.next()) |str| {
+            const num = try std.fmt.parseInt(u32, str, 10);
+            try arr2.append(num);
+        }
+        var matched: u32 = 0;
+        for (arr2.items) |num2| {
+            for (arr1.items) |num1| {
+                if (num2 == num1) {
+                    matched += 1;
+                }
+            }
+        }
+
+        dprint("idx: {}, matched: {}\n", .{ idx, matched });
+        var cidx: u32 = @as(u32, @intCast(idx)) + 1;
+        while (cidx <= idx + matched) : (cidx += 1) {
+            wc_input[cidx] += (1 * wc_input[idx]);
+        }
+        for (wc_input) |c| {
+            dprint("{} ", .{c});
+        }
+        dprint("\n", .{});
+    }
+
+    var sum: u32 = 0;
+    for (wc_input) |c| {
+        sum += c;
+    }
+    dprint("sum: {}\n", .{sum});
+}
+
 fn part1(allocator: mem.Allocator, input: [][]const u8) !void {
     var sum: u32 = 0;
     for (input) |line| {
@@ -96,5 +149,6 @@ pub fn main() !void {
         dprint("{s}\n", .{line});
     }
 
-    try part1(allocator, input);
+    // try part1(allocator, input);
+    try part2(allocator, input);
 }
